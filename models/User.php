@@ -2,37 +2,42 @@
 
 namespace app\models;
 
-class User extends \yii\base\Object implements \yii\web\IdentityInterface
+use yii\mongodb\ActiveRecord;
+use yii\mongodb\Query;
+
+class User extends ActiveRecord implements \yii\web\IdentityInterface
 {
-    public $id;
-    public $username;
-    public $password;
-    public $authKey;
-    public $accessToken;
-
-    private static $users = [
-        '100' => [
-            'id' => '100',
-            'username' => 'admin',
-            'password' => 'admin',
-            'authKey' => 'test100key',
-            'accessToken' => '100-token',
-        ],
-        '101' => [
-            'id' => '101',
-            'username' => 'demo',
-            'password' => 'demo',
-            'authKey' => 'test101key',
-            'accessToken' => '101-token',
-        ],
-    ];
-
+    /**
+     * @return string the name of the index associated with this ActiveRecord class.
+     */
+    public static function collectionName()
+    {
+        return 'user';
+    }
+    
+    /**
+     * @return array list of attribute names.
+     */
+    public function attributes()
+    {
+        return ['_id', 'username', 'password', 'authKey', 'accessToken'];
+    }
+    
+    protected static function _findOneBy($attr, $value)
+    {
+        $query = new Query;
+        $data = $query->from('user')
+                ->where([$attr => $value])
+                ->one();
+        return new self($data);
+    }
+    
     /**
      * @inheritdoc
      */
     public static function findIdentity($id)
     {
-        return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
+        return self::_findOneBy('_id', $id);
     }
 
     /**
@@ -40,15 +45,9 @@ class User extends \yii\base\Object implements \yii\web\IdentityInterface
      */
     public static function findIdentityByAccessToken($token)
     {
-        foreach (self::$users as $user) {
-            if ($user['accessToken'] === $token) {
-                return new static($user);
-            }
-        }
-
-        return null;
+        return self::_findOneBy('accessToken', $token);
     }
-
+    
     /**
      * Finds user by username
      *
@@ -57,23 +56,17 @@ class User extends \yii\base\Object implements \yii\web\IdentityInterface
      */
     public static function findByUsername($username)
     {
-        foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
-                return new static($user);
-            }
-        }
-
-        return null;
+        return self::_findOneBy('username', $username);
     }
-
+    
     /**
      * @inheritdoc
      */
     public function getId()
     {
-        return $this->id;
+        return (string)$this->_id;
     }
-
+    
     /**
      * @inheritdoc
      */

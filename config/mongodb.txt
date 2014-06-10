@@ -1,0 +1,6 @@
+USERS DEMO
+----------
+
+db.createCollection("user")
+db.user.insert({'username': 'admin', 'password': 'admin', 'authKey': 'test100key', 'accessToken': '100-token'})
+db.user.insert({'username': 'demo', 'password': 'demo', 'authKey': 'test101key', 'accessToken': '101-token'})
