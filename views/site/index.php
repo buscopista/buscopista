@@ -6,6 +6,15 @@ $this->title = 'My Yii Application';
 ?>
 <div class="site-index">
 
+    <?php foreach (array('info', 'error', 'warning', 'success') as $alert): ?>
+        <?php if (Yii::$app->session->hasFlash($alert)): ?>
+            <div class="alert alert-<?= $alert ?>">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                <?= Yii::$app->session->getFlash($alert) ?>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
+    
     <div class="jumbotron">
         <h1>Congratulations!</h1>
 

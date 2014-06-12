@@ -1,6 +1,6 @@
 USERS DEMO
 ----------
 
-db.createCollection("user")
-db.user.insert({'username': 'admin', 'password': 'admin', 'authKey': 'test100key', 'accessToken': '100-token'})
-db.user.insert({'username': 'demo', 'password': 'demo', 'authKey': 'test101key', 'accessToken': '101-token'})
+db.createCollection("user");
+db.user.insert({ "username" : "admin", "mail" : "admin@example.com", "password" : "$2y$13$mmyhandnkpbU/VsoM0kw8uJ/FrvufVXyJLHIZY.f9culglflRjxQm", "role" : "1", "salt" : "6BSKgk", "authKey" : "7ZUptMBGVNrvJcHw-DYgUFD7J93On7CU", "accessToken" : "LlkmtwgxIuMZ2OKu-NEzkqE3FcSw_UuR" });
+db.user.insert({ "username" : "demo", "mail" : "demo@example.com", "password" : "$2y$13$tBqvLRNTDanU6QBhcqo/weYoKshimaw9yXewaK4Iy4x7Tjh3uFgii", "role" : "2", "salt" : "MG-XgT", "authKey" : "OOqlL1O0okMsbniuo9dn7QS3B56LTPby", "accessToken" : "H1_0uBUYmH8_LoJlOQnQhrlgC8UicJtA" });
