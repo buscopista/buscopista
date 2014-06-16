@@ -2,11 +2,9 @@
 
 namespace app\models;
 
-use yii\mongodb\ActiveRecord;
-use yii\mongodb\Query;
 use yii\helpers\Security;
 
-class User extends ActiveRecord implements \yii\web\IdentityInterface
+class User extends MongoModel implements \yii\web\IdentityInterface
 {
     const ROLE_ANONYMOUS = 0;
     const ROLE_ADMIN     = 1;
@@ -24,9 +22,9 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
     /**
      * @return array list of attribute names.
      */
-    public function attributes()
+    protected function _attributes()
     {
-        return ['_id', 'username', 'password', 'salt', 'mail', 'role', 'authKey', 'accessToken'];
+        return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 'accessToken'];
     }
     
     /**
@@ -61,21 +59,12 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
         return false;
     }
     
-    protected static function _findOneBy($attr, $value)
-    {
-        $query = new Query;
-        $data = $query->from('user')
-                ->where([$attr => $value])
-                ->one();
-        return new self($data);
-    }
-    
     /**
      * @inheritdoc
      */
     public static function findIdentity($id)
     {
-        return self::_findOneBy('_id', $id);
+        return self::_findOneBy(['_id' => $id]);
     }
 
     /**
@@ -83,7 +72,7 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
      */
     public static function findIdentityByAccessToken($token)
     {
-        return self::_findOneBy('accessToken', $token);
+        return self::_findOneBy(['accessToken' => $token]);
     }
     
     /**
@@ -94,7 +83,7 @@ class User extends ActiveRecord implements \yii\web\IdentityInterface
      */
     public static function findByUsername($username)
     {
-        return self::_findOneBy('username', $username);
+        return self::_findOneBy(['username' => $username]);
     }
     
     /**
