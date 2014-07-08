@@ -10,21 +10,13 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     const ROLE_ADMIN     = 1;
     const ROLE_SPORT     = 2;
     const ROLE_MANAGER   = 3;
-    
-    /**
-     * @return string the name of the index associated with this ActiveRecord class.
-     */
-    public static function collectionName()
-    {
-        return 'user';
-    }
-    
+        
     /**
      * @return array list of attribute names.
      */
     protected function _attributes()
     {
-        return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 'accessToken'];
+        return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 'accessToken', 'resetPasswordToken'];
     }
     
     /**
@@ -48,7 +40,7 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
-            if ($this->isNewRecord) {
+            if ($insert) {
                 $this->salt = substr(Security::generateRandomKey(), -6);
                 $this->password = Security::generatePasswordHash($this->password . $this->salt);
                 $this->authKey = Security::generateRandomKey();
@@ -87,6 +79,17 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     }
     
     /**
+     * Finds user by mail
+     *
+     * @param  string      $email
+     * @return static|null
+     */
+    public static function findByEmail($email)
+    {
+        return self::_findOneBy(['mail' => $email]);
+    }
+    
+    /**
      * @inheritdoc
      */
     public function getId()
@@ -119,5 +122,17 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     public function validatePassword($password)
     {
         return Security::validatePassword($password . $this->salt, $this->password);
+    }
+    
+    /**
+     * Generate reset password token
+     * 
+     * @return string reset password token
+     */
+    public function generateResetPasswordToken()
+    {
+        $this->resetPasswordToken = time() . '_' . Security::generateRandomKey();
+        $this->update(false);
+        return $this->resetPasswordToken;
     }
 }

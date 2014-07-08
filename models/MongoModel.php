@@ -6,18 +6,32 @@ use yii\mongodb\ActiveRecord;
 use yii\mongodb\Query;
 
 abstract class MongoModel extends ActiveRecord
-{    
+{
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
             $now = time();
-            if ($this->isNewRecord) {
+            if ($insert) {
+                // Create case
                 $this->created = $now;
             }
             $this->modified = $now;
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Returns the attribute values that have been modified since they are loaded or saved most recently.
+     * @param string[]|null $names the names of the attributes whose values may be returned if they are
+     * changed recently. If null, [[attributes()]] will be used.
+     * @return array the changed attribute values (name-value pairs)
+     */
+    public function getDirtyAttributes($names = null)
+    {
+        $attributes = parent::getDirtyAttributes($names);
+        unset($attributes['_id']); // BUG? Removing PK to avoid update errors...
+        return $attributes;
     }
     
     /**
@@ -48,6 +62,7 @@ abstract class MongoModel extends ActiveRecord
         $data = $query->from(self::collectionName())
                 ->where($params)
                 ->one();
-        return new static($data);
+        
+        return empty($data) ? null : new static($data);
     }
 }

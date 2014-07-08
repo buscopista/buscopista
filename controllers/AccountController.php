@@ -8,6 +8,7 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\RegisterForm;
+use app\models\ForgotForm;
 
 class AccountController extends Controller
 {
@@ -94,5 +95,24 @@ class AccountController extends Controller
         Yii::$app->user->logout();
 
         return $this->goHome();
+    }
+    
+    public function actionForgot()
+    {
+        if (!\Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+        
+        $model = new ForgotForm();
+        $email = Yii::$app->params['supportEmail'];
+        
+        if ($model->load(Yii::$app->request->post()) && $model->forgot($email)) {
+            Yii::$app->session->setFlash('info', Yii::t('app', 'We have sent you an e-mail to your account'));
+            return $this->goBack();
+        } else {
+            return $this->render('forgot', [
+                'model' => $model,
+            ]);
+        }
     }
 }
