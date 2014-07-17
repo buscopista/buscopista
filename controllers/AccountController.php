@@ -65,7 +65,10 @@ class AccountController extends Controller
         }
         
         $model = new RegisterForm();
-        if ($model->load(Yii::$app->request->post()) && $model->register()) {
+        $email = Yii::$app->params['supportEmail'];
+        
+        if ($model->load(Yii::$app->request->post()) && $model->register($email)) {
+            Yii::$app->session->setFlash('success', Yii::t('app', 'You have been successfully signed up. We have sent you a confirmation e-mail to your account.'));
             return $this->goBack();
         } else {
             return $this->render('register', [

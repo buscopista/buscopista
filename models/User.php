@@ -16,7 +16,8 @@ class User extends MongoModel implements \yii\web\IdentityInterface
      */
     protected function _attributes()
     {
-        return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 'accessToken', 'resetPasswordToken'];
+        return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 
+            'accessToken', 'confirmToken', 'resetPasswordToken'];
     }
     
     /**
@@ -45,6 +46,7 @@ class User extends MongoModel implements \yii\web\IdentityInterface
                 $this->password = Security::generatePasswordHash($this->password . $this->salt);
                 $this->authKey = Security::generateRandomKey();
                 $this->accessToken = Security::generateRandomKey();
+                $this->confirmToken = Security::generateRandomKey();
             }
             return true;
         }

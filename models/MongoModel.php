@@ -14,6 +14,10 @@ abstract class MongoModel extends ActiveRecord
             if ($insert) {
                 // Create case
                 $this->created = $now;
+                // Node status (published by default)
+                if (!isset($this->status)) {
+                    $this->status = 1;
+                }
             }
             $this->modified = $now;
             return true;
@@ -40,7 +44,7 @@ abstract class MongoModel extends ActiveRecord
     public function attributes()
     {
         return array_merge(
-            ['_id', 'created', 'modified'], 
+            ['_id', 'created', 'modified', 'status'], 
             $this->_attributes()
         );
     }
