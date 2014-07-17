@@ -47,18 +47,33 @@ class LoginForm extends Model
     }
 
     /**
+     * Active user?
+     * @return boolean
+     */
+    public function validateStatus()
+    {
+        if (!$this->hasErrors()) {
+            $user = $this->getUser();
+            
+            if ($user && !$user->status) {
+                $this->addError('username', 'Account not verified. Please check out your e-mail inbox and look for the confirmation e-mail.');
+            }
+        }
+    }
+    
+    /**
      * Logs in a user using the provided username and password.
      * @return boolean whether the user is logged in successfully
      */
     public function login()
     {
-        if ($this->validate()) {
+        if ($this->validate() && $this->validateStatus()) {
             return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600*24*30 : 0);
         } else {
             return false;
         }
     }
-
+    
     /**
      * Finds user by [[username]]
      *
