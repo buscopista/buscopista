@@ -57,7 +57,7 @@ abstract class MongoModel extends ActiveRecord
     public function attributes()
     {
         return array_merge(
-            ['_id', 'created', 'modified'], 
+            ['_id', 'created', 'modified', 'status'], 
             $this->_attributes()
         );
     }
@@ -66,6 +66,24 @@ abstract class MongoModel extends ActiveRecord
      * @return array list of attribute names.
      */
     abstract protected function _attributes();
+    
+    /**
+     * Activate / publish node
+     */
+    public function activate()
+    {
+        $this->status = 1;
+        $this->update(false);
+    }
+    
+    /**
+     * Deactivate / unpublish node
+     */
+    public function deactivate()
+    {
+        $this->status = 0;
+        $this->update(false);
+    }
     
     /**
      * Auxiliar method to find elements

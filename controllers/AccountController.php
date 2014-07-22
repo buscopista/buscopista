@@ -9,6 +9,7 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\RegisterForm;
 use app\models\ForgotForm;
+use app\models\User;
 
 class AccountController extends Controller
 {
@@ -52,7 +53,7 @@ class AccountController extends Controller
     {
         if (\Yii::$app->user->isGuest) {
             Yii::$app->session->setFlash('error', Yii::t('app', 'You need to login first'));
-            return $this->redirect('/account/login');
+            return $this->redirect(['/account/login']);
         }
         
         // TODO view user account
@@ -74,6 +75,30 @@ class AccountController extends Controller
             return $this->render('register', [
                 'model' => $model,
             ]);
+        }
+    }
+    
+    public function actionConfirm()
+    {
+        if (\Yii::$app->user->isGuest) {
+            $username = Yii::$app->request->get('username');
+            $user = $username ? User::findByUsername($username) : null;
+            $token = Yii::$app->request->get('token');
+            
+            if ($user && $token && $user->confirmToken === $token) {
+                // Activate user account
+                $user->activate();
+                // Notify user
+                Yii::$app->session->setFlash('success', Yii::t('app', 'Account succesfully verified. Please enter your credentials to sign in.'));
+                return $this->redirect(['/account/login']);
+            } else {
+                Yii::error("Username '{$username}' and confirmToken '{$token}' doesn't match");
+                Yii::$app->session->setFlash('error', Yii::t('app', 'Wrong URL params. Please contact to support team for more information.'));
+                return $this->goHome();
+            }
+        } else {
+            Yii::$app->session->setFlash('info', Yii::t('app', 'Your account is already verified.'));
+            return $this->goBack();
         }
     }
     
