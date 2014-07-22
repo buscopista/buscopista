@@ -13,6 +13,7 @@ class RegisterForm extends Model
 {
     public $username;
     public $mail;
+    public $repeat_password;
     public $password;
     public $role;
     public $verifyCode;
@@ -22,6 +23,8 @@ class RegisterForm extends Model
         return array_merge(
             User::rules(), 
             [
+                ['repeat_password', 'required'],
+                ['repeat_password', 'compare', 'compareAttribute' => 'password'],
                 // verifyCode needs to be entered correctly
                 ['verifyCode', 'captcha']
             ]
@@ -49,7 +52,11 @@ class RegisterForm extends Model
                     'sitename' => Yii::$app->params['sitename']
                 ]))
                 ->setTextBody(Yii::t('app', 'You can confirm your account at: {link}', [
-                    'link' => Url::to(['account/confirm', 'token' => $model->confirmToken])
+                    'link' => Url::to([
+                        'account/confirm', 
+                        'username' => $model->username, 
+                        'token'    => $model->confirmToken
+                    ])
                 ]))
                 ->send();
         }

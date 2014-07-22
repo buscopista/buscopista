@@ -9,10 +9,10 @@ use app\models\User;
  * @var yii\widgets\ActiveForm $form
  * @var app\models\RegisterForm $model
  */
-$this->title = 'Register';
+$this->title = Yii::t('app', 'Register');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="site-login">
+<div class="account-register">
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>Please fill out the following fields to sign up:</p>
@@ -29,6 +29,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= $form->field($model, 'username') ?>
     <?= $form->field($model, 'mail') ?>
     <?= $form->field($model, 'password')->passwordInput() ?>
+    <?= $form->field($model, 'repeat_password')->passwordInput() ?>
+    
     <?php if (empty($this->role)): ?>
         <?= $form->field($model, 'role')->dropDownList(array(
             User::ROLE_SPORT   => Yii::t('app', 'I just want to do sport'),
