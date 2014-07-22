@@ -7,6 +7,16 @@ use yii\mongodb\Query;
 
 abstract class MongoModel extends ActiveRecord
 {
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
+        
+        // Update case
+        if (!empty($config) && !empty($config['_id'])) {
+            $this->setOldAttributes($config);
+        }
+    }
+    
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
@@ -34,7 +44,10 @@ abstract class MongoModel extends ActiveRecord
     public function getDirtyAttributes($names = null)
     {
         $attributes = parent::getDirtyAttributes($names);
-        unset($attributes['_id']); // BUG? Removing PK to avoid update errors...
+        // BUG? Removing PK to avoid update errors...
+        if (isset($attributes['_id'])) {
+            unset($attributes['_id']);
+        }
         return $attributes;
     }
     
@@ -44,7 +57,7 @@ abstract class MongoModel extends ActiveRecord
     public function attributes()
     {
         return array_merge(
-            ['_id', 'created', 'modified', 'status'], 
+            ['_id', 'created', 'modified'], 
             $this->_attributes()
         );
     }
