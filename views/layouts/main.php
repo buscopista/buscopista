@@ -52,9 +52,9 @@ AppAsset::register($this);
             <?= Breadcrumbs::widget([
                 'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
             ]) ?>            
-            <?php foreach (array('info', 'error', 'warning', 'success') as $alert): ?>
+            <?php foreach (array('info' => 'info', 'danger' => 'error', 'warning' => 'warning', 'success' => 'success') as $class => $alert): ?>
                 <?php if (Yii::$app->session->hasFlash($alert)): ?>
-                    <div class="alert alert-<?= $alert ?>">
+                    <div class="alert alert-<?= $class ?>">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                         <?= Yii::$app->session->getFlash($alert) ?>
                     </div>
