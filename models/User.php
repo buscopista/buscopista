@@ -25,16 +25,37 @@ class User extends MongoModel implements \yii\web\IdentityInterface
      */
     public function rules()
     {
+        return array_merge(
+            // Reused at account form
+            self::rules_account(),
+            // Reused at change password form
+            self::rules_password(),
+            [
+                // Check register form
+                [['role'], 'required'],
+                [['role'], 'in', 'range' => [
+                    self::ROLE_SPORT, 
+                    self::ROLE_MANAGER
+                ]],
+            ]
+        );
+    }
+    
+    public function rules_account()
+    {
         return [
-            [['username', 'mail', 'password', 'role'], 'required'],
+            [['username', 'mail'], 'required'],
             [['username'], 'string', 'length' => [4, 32]],
             [['mail'], 'email'],
             [['username', 'mail'], 'unique', 'targetClass' => __CLASS__],
+        ];
+    }
+    
+    public function rules_password()
+    {
+        return [
+            [['password'], 'required'],
             [['password'], 'string', 'length' => [8, 128]],
-            [['role'], 'in', 'range' => [
-                self::ROLE_SPORT, 
-                self::ROLE_MANAGER
-            ]],
         ];
     }
     
@@ -42,8 +63,10 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     {
         if (parent::beforeSave($insert)) {
             if ($insert) {
+                // Password security
                 $this->salt = substr(Security::generateRandomKey(), -6);
-                $this->password = Security::generatePasswordHash($this->password . $this->salt);
+                $this->generatePassword($this->password);
+                // Identity security
                 $this->authKey = Security::generateRandomKey();
                 $this->accessToken = Security::generateRandomKey();
                 $this->confirmToken = Security::generateRandomKey();
@@ -136,5 +159,16 @@ class User extends MongoModel implements \yii\web\IdentityInterface
         $this->resetPasswordToken = time() . '_' . Security::generateRandomKey();
         $this->update(false);
         return $this->resetPasswordToken;
+    }
+    
+    /**
+     * Generate password
+     * 
+     * @param string $password
+     */
+    public function generatePassword($password) 
+    {
+        $this->password = Security::generatePasswordHash($password . $this->salt);
+        return $this;
     }
 }

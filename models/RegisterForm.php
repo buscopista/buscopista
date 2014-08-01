@@ -35,32 +35,37 @@ class RegisterForm extends Model
      * Register a new user
      * @return boolean whether the user is successfully stored
      */
-    public function register($email)
+    public function register()
     {
         // Inactive user until account is confirmed
-        $model = new User();
-        $model->status = 0;
+        $user = new User();
+        $user->status = 0;
         
         if ($this->validate() 
-                && $model->load(Yii::$app->request->post(), 'RegisterForm')
-                && $model->save()) {
+                && $user->load(Yii::$app->request->post(), 'RegisterForm')
+                && $user->save()) {
             // Send confirmation e-mail
-            return Yii::$app->mail->compose()
-                ->setTo($model->mail)
-                ->setFrom($email)
-                ->setSubject(Yii::t('app', '[{sitename}] Confirm your account', [
-                    'sitename' => Yii::$app->params['sitename']
-                ]))
-                ->setTextBody(Yii::t('app', 'You can confirm your account at: {link}', [
-                    'link' => Url::to([
-                        'account/confirm', 
-                        'username' => $model->username, 
-                        'token'    => $model->confirmToken
-                    ])
-                ]))
-                ->send();
+            return $this->sendConfirmationMail($user);
         }
         
         return false;
+    }
+    
+    public function sendConfirmationMail(User $user)
+    {
+        return Yii::$app->mail->compose()
+            ->setTo($user->mail)
+            ->setFrom(Yii::$app->params['supportEmail'])
+            ->setSubject(Yii::t('app', '[{sitename}] Confirm your account', [
+                'sitename' => Yii::$app->params['sitename']
+            ]))
+            ->setTextBody(Yii::t('app', 'You can confirm your account at: {link}', [
+                'link' => Url::to([
+                    'account/confirm', 
+                    'username' => $user->username, 
+                    'token'    => $user->confirmToken
+                ])
+            ]))
+            ->send();
     }
 }

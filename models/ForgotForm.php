@@ -43,7 +43,7 @@ class ForgotForm extends Model
      * Sends password to user's email
      * @return boolean whether the user exists and mail has been succesfully delivered
      */
-    public function forgot($email)
+    public function forgot()
     {
         if ($this->validate()) {
             
@@ -53,7 +53,7 @@ class ForgotForm extends Model
                 $token = $user->generateResetPasswordToken();
                 Yii::$app->mail->compose()
                     ->setTo($user->mail)
-                    ->setFrom($email)
+                    ->setFrom(Yii::$app->params['supportEmail'])
                     ->setSubject(Yii::t('app', '[{sitename}] Reset your password', [
                         'sitename' => Yii::$app->params['sitename']
                     ]))

@@ -9,6 +9,8 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\RegisterForm;
 use app\models\ForgotForm;
+use app\models\AccountForm;
+use app\models\PasswordForm;
 use app\models\User;
 
 class AccountController extends Controller
@@ -56,7 +58,54 @@ class AccountController extends Controller
             return $this->redirect(['/account/login']);
         }
         
-        // TODO view user account
+        // Individual forms!!!
+        $modelA = new AccountForm();
+        $modelP = new PasswordForm();
+        
+        // Default values
+        $tab = 'account';
+        $user = clone Yii::$app->user->getIdentity();
+        $modelA->setAttributes(array(
+            'username' => $user->username,
+            'mail'     => $user->mail,
+        ));
+        
+        switch (TRUE) {
+            // Update account?
+            case $modelA->load(Yii::$app->request->post()):
+                $tab = 'account';
+                if ($modelA->update()) { 
+                    Yii::$app->session->setFlash('success', Yii::t('app', 'Your account has been successfully updated.'));
+                    // If user changes mail...
+                    if ($user->mail !== $modelA->mail) {
+                        // Deactive user
+                        $user->deactivate();
+                        // Send confirmation mail again
+                        $model = new RegisterForm();
+                        $model->sendConfirmationMail($user);
+                        // Logout
+                        Yii::$app->user->logout();
+                        // TODO show a message...
+                        return $this->goHome();
+                    }
+                }
+                break;
+            // Update password?
+            case $modelP->load(Yii::$app->request->post()):
+                $tab = 'password';
+                if ($modelP->update()) {
+                    Yii::$app->session->setFlash('success', Yii::t('app', 'Your password has been successfully changed.'));
+                } else {
+                    $modelP->reset(); // Security issues...
+                }
+                break;
+        }
+        
+        return $this->render('index', [
+            'modelA' => $modelA,
+            'modelP' => $modelP,
+            'tab'    => $tab
+        ]);
     }
     
     public function actionRegister()
@@ -66,9 +115,8 @@ class AccountController extends Controller
         }
         
         $model = new RegisterForm();
-        $email = Yii::$app->params['supportEmail'];
         
-        if ($model->load(Yii::$app->request->post()) && $model->register($email)) {
+        if ($model->load(Yii::$app->request->post()) && $model->register()) {
             Yii::$app->session->setFlash('success', Yii::t('app', 'You have been successfully signed up. We have sent you a confirmation e-mail to your account.'));
             return $this->goBack();
         } else {
@@ -132,9 +180,8 @@ class AccountController extends Controller
         }
         
         $model = new ForgotForm();
-        $email = Yii::$app->params['supportEmail'];
         
-        if ($model->load(Yii::$app->request->post()) && $model->forgot($email)) {
+        if ($model->load(Yii::$app->request->post()) && $model->forgot()) {
             Yii::$app->session->setFlash('info', Yii::t('app', 'We have sent you an e-mail to your account'));
             return $this->goBack();
         } else {
