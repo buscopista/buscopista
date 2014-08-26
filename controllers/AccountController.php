@@ -131,14 +131,19 @@ class AccountController extends Controller
         if (\Yii::$app->user->isGuest) {
             $username = Yii::$app->request->get('username');
             $user = $username ? User::findByUsername($username) : null;
+            $user ? $user->setScenario(User::SCENARIO_CONFIRM) : null;
             $token = Yii::$app->request->get('token');
             
-            if ($user && $token && $user->confirmToken === $token) {
-                // Activate user account
-                $user->activate();
-                // Notify user
-                Yii::$app->session->setFlash('success', Yii::t('app', 'Account succesfully verified. Please enter your credentials to sign in.'));
-                return $this->redirect(['/account/login']);
+            // Activate user account
+            if ($user && $token && $user->confirmToken === $token) { 
+                if ($user->activate() && $user->save()) {
+                    Yii::$app->session->setFlash('success', Yii::t('app', 'Account succesfully verified. Please enter your credentials to sign in.'));
+                    return $this->redirect(['/account/login']);
+                } else {
+                    Yii::error("Unable to activate user '{$username}' using confirmToken '{$token}'");
+                    Yii::$app->session->setFlash('error', Yii::t('app', 'Unexpected error. Please contact to support team for more information.'));
+                    return $this->goHome();
+                }
             } else {
                 Yii::error("Username '{$username}' and confirmToken '{$token}' doesn't match");
                 Yii::$app->session->setFlash('error', Yii::t('app', 'Wrong URL params. Please contact to support team for more information.'));
@@ -175,10 +180,6 @@ class AccountController extends Controller
     
     public function actionForgot()
     {
-        if (!\Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
-        
         $model = new ForgotForm();
         
         if ($model->load(Yii::$app->request->post()) && $model->forgot()) {

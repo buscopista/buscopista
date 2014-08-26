@@ -48,9 +48,11 @@ class ForgotForm extends Model
         if ($this->validate()) {
             
             $user = $this->getUser();
+            $user->setScenario(User::SCENARIO_FORGOT_PASSWORD);
             
-            try {
-                $token = $user->generateResetPasswordToken();
+            // (Re)build token
+            if ($user->generateResetPasswordToken() && $user->save()) {
+                // Send recovery mail
                 Yii::$app->mail->compose()
                     ->setTo($user->mail)
                     ->setFrom(Yii::$app->params['supportEmail'])
@@ -58,16 +60,14 @@ class ForgotForm extends Model
                         'sitename' => Yii::$app->params['sitename']
                     ]))
                     ->setTextBody(Yii::t('app', 'You can reset your password at: {link}', [
-                        'link' => Url::to(['account/reset', 'token' => $token])
+                        'link' => Url::to(['account/reset', 'token' => $user->resetPasswordToken])
                     ]))
                     ->send();
                 return true;
-            } catch (\Exception $ex) {
-                Yii::error($ex->getMessage());
-                $this->addError('mail', Yii::t('app', 'Unable to send email now, please try again later'));
             }
         }
         
+        $this->addError('mail', Yii::t('app', 'Unable to send email now, please try again later'));
         return false;
     }
     

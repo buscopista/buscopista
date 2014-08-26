@@ -13,8 +13,8 @@ class RegisterForm extends Model
 {
     public $username;
     public $mail;
-    public $repeat_password;
     public $password;
+    public $repeat_password;
     public $role;
     public $verifyCode;
     
@@ -39,16 +39,13 @@ class RegisterForm extends Model
     {
         // Inactive user until account is confirmed
         $user = new User();
-        $user->status = 0;
+        $user->setScenario(User::SCENARIO_REGISTER);
         
-        if ($this->validate() 
-                && $user->load(Yii::$app->request->post(), 'RegisterForm')
-                && $user->save()) {
-            // Send confirmation e-mail
-            return $this->sendConfirmationMail($user);
-        }
-        
-        return false;
+        return 
+            $this->validate() && 
+            $user->load(Yii::$app->request->post(), 'RegisterForm') && 
+            $user->save() &&
+            $this->sendConfirmationMail($user);
     }
     
     public function sendConfirmationMail(User $user)

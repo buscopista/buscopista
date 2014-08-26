@@ -51,6 +51,7 @@ class PasswordForm extends Model
     public function update()
     {
         $user = $this->getUser();
+        $user->setScenario(User::SCENARIO_CHANGE_PASSWORD);
         $data = Yii::$app->request->post('PasswordForm');
         
         return 

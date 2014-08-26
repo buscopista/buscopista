@@ -6,11 +6,17 @@ use yii\helpers\Security;
 
 class User extends MongoModel implements \yii\web\IdentityInterface
 {
+    const SCENARIO_REGISTER         = 'create_account';
+    const SCENARIO_CONFIRM          = 'confirm_account';
+    const SCENARIO_UPDATE           = 'update_account';
+    const SCENARIO_CHANGE_PASSWORD  = 'change_password';
+    const SCENARIO_FORGOT_PASSWORD  = 'forgot_password';
+    
     const ROLE_ANONYMOUS = 0;
     const ROLE_ADMIN     = 1;
     const ROLE_SPORT     = 2;
     const ROLE_MANAGER   = 3;
-        
+    
     /**
      * @return array list of attribute names.
      */
@@ -18,6 +24,17 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     {
         return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 
             'accessToken', 'confirmToken', 'resetPasswordToken'];
+    }
+    
+    public function scenarios()
+    {
+        return [
+            self::SCENARIO_REGISTER         => ['username', 'password', 'mail', 'role', 'status'],
+            self::SCENARIO_CONFIRM          => ['status'],
+            self::SCENARIO_UPDATE           => ['username', 'mail'],
+            self::SCENARIO_CHANGE_PASSWORD  => ['password'],
+            self::SCENARIO_FORGOT_PASSWORD  => ['resetPasswordToken'],
+        ];
     }
     
     /**
@@ -47,7 +64,14 @@ class User extends MongoModel implements \yii\web\IdentityInterface
             [['username', 'mail'], 'required'],
             [['username'], 'string', 'length' => [4, 32]],
             [['mail'], 'email'],
-            [['username', 'mail'], 'unique', 'targetClass' => __CLASS__],
+            [['username', 'mail'], 'unique', 'targetClass' => __CLASS__, 'filter' => function ($query) {
+                // Fix unique fields update issue avoiding self instance check
+                if (isset($this->_id)) {
+                    $query->andWhere(
+                        ['not in', '_id', [$this->_id]]
+                    );
+                }
+            }],
         ];
     }
     
@@ -70,6 +94,8 @@ class User extends MongoModel implements \yii\web\IdentityInterface
                 $this->authKey = Security::generateRandomKey();
                 $this->accessToken = Security::generateRandomKey();
                 $this->confirmToken = Security::generateRandomKey();
+                // Node status (inactive by default)
+                $this->status = 0;
             }
             return true;
         }
@@ -157,8 +183,7 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     public function generateResetPasswordToken()
     {
         $this->resetPasswordToken = time() . '_' . Security::generateRandomKey();
-        $this->update(false);
-        return $this->resetPasswordToken;
+        return $this;
     }
     
     /**

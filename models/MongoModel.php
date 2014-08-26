@@ -25,9 +25,7 @@ abstract class MongoModel extends ActiveRecord
                 // Create case
                 $this->created = $now;
                 // Node status (published by default)
-                if (!isset($this->status)) {
-                    $this->status = 1;
-                }
+                $this->status = 1;
             }
             $this->modified = $now;
             return true;
@@ -73,7 +71,7 @@ abstract class MongoModel extends ActiveRecord
     public function activate()
     {
         $this->status = 1;
-        $this->update(false);
+        return $this;
     }
     
     /**
@@ -82,7 +80,7 @@ abstract class MongoModel extends ActiveRecord
     public function deactivate()
     {
         $this->status = 0;
-        $this->update(false);
+        return $this;
     }
     
     /**
