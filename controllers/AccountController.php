@@ -11,6 +11,7 @@ use app\models\RegisterForm;
 use app\models\ForgotForm;
 use app\models\AccountForm;
 use app\models\PasswordForm;
+use app\models\ResetPasswordForm;
 use app\models\User;
 
 class AccountController extends Controller
@@ -61,22 +62,27 @@ class AccountController extends Controller
         $model = new AccountForm();
         
         // Default values
-        $userCopy = clone Yii::$app->user->getIdentity();
+        $user = Yii::$app->user->getIdentity();
         $model->setAttributes(array(
-            'username' => $userCopy->username,
-            'mail'     => $userCopy->mail,
+            'username' => $user->username,
+            'mail'     => $user->mail,
         ));
+        
+        // Store current mail to check changes later
+        $oldMail = $user->mail;
         
         if ($model->load(Yii::$app->request->post()) && $model->update()) {
             Yii::$app->session->setFlash('success', Yii::t('app', 'Your account has been successfully updated.'));
             // If user changes mail...
-            if ($userCopy->mail !== $model->mail) {
+            if ($model->mail !== $oldMail) {
                 // Deactive user
-                $userCopy->deactivate();
-                $userCopy->save();
+                $user->setScenario(User::SCENARIO_CHANGE_STATUS);
+                $user->deactivate();
+                $user->generateConfirmToken();
+                $user->save();
                 // Send confirmation mail again
                 $obj = new RegisterForm();
-                $obj->sendConfirmationMail($userCopy);
+                $obj->sendConfirmationMail($user);
                 // Logout
                 Yii::$app->user->logout();
                 // TODO show a message...
@@ -121,6 +127,8 @@ class AccountController extends Controller
             Yii::$app->session->setFlash('success', Yii::t('app', 'You have been successfully signed up. We have sent you a confirmation e-mail to your account.'));
             return $this->goBack();
         } else {
+            $model->reset(); // Security issues...
+            
             return $this->render('register', [
                 'model' => $model,
             ]);
@@ -130,13 +138,14 @@ class AccountController extends Controller
     public function actionConfirm()
     {
         if (\Yii::$app->user->isGuest) {
+            
             $username = Yii::$app->request->get('username');
             $user = $username ? User::findByUsername($username) : null;
-            $user ? $user->setScenario(User::SCENARIO_CONFIRM) : null;
             $token = Yii::$app->request->get('token');
             
-            if ($user && $token && $user->confirmToken === $token) { 
+            if ($user && $token && $user->validateConfirmToken($token)) { 
                 // Activate user
+                $user->setScenario(User::SCENARIO_CHANGE_STATUS);
                 $user->activate();
                 $user->save();
                 // Notify user
@@ -160,6 +169,7 @@ class AccountController extends Controller
         }
 
         $model = new LoginForm();
+        
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
             return $this->goBack();
         } else {
@@ -180,6 +190,14 @@ class AccountController extends Controller
     {
         $model = new ForgotForm();
         
+        if (!\Yii::$app->user->isGuest) {
+            // Default value
+            $user = Yii::$app->user->getIdentity();
+            $model->setAttributes(array(
+                'mail'     => $user->mail,
+            ));
+        }
+        
         if ($model->load(Yii::$app->request->post()) && $model->forgot()) {
             Yii::$app->session->setFlash('info', Yii::t('app', 'We have sent you an e-mail to your account'));
             return $this->goBack();
@@ -187,6 +205,33 @@ class AccountController extends Controller
             return $this->render('forgot', [
                 'model' => $model,
             ]);
+        }
+    }
+    
+    public function actionReset()
+    {
+        $username = Yii::$app->request->get('username');
+        $user = $username ? User::findByUsername($username) : null;
+        $token = Yii::$app->request->get('token');
+
+        if ($user && $token && $user->validateResetPasswordToken($token)) {
+
+            $model = new ResetPasswordForm();
+
+            if ($model->load(Yii::$app->request->post()) && $model->update($user)) {
+                Yii::$app->session->setFlash('success', Yii::t('app', 'Your password has been successfully changed.'));
+                return $this->redirect(['/account/login']);
+            } else {
+                $model->reset(); // Security issues...
+                
+                return $this->render('reset', [
+                    'model' => $model,
+                ]);
+            }            
+        } else {
+            Yii::error("Username '{$username}' has an invalid resetPasswordToken '{$token}'");
+            Yii::$app->session->setFlash('error', Yii::t('app', 'Wrong URL params. Please contact to support team for more information.'));
+            return $this->goHome();
         }
     }
 }

@@ -59,8 +59,12 @@ class ForgotForm extends Model
                     ->setSubject(Yii::t('app', '[{sitename}] Reset your password', [
                         'sitename' => Yii::$app->params['sitename']
                     ]))
-                    ->setTextBody(Yii::t('app', 'You can reset your password at: {link}', [
-                        'link' => Url::to(['account/reset', 'token' => $user->resetPasswordToken])
+                    ->setTextBody(Yii::t('app', 'You can confirm your account at: {link}', [
+                        'link' => Url::to([
+                            'account/reset', 
+                            'username' => $user->username, 
+                            'token'    => $user->resetPasswordToken
+                        ])
                     ]))
                     ->send();
                 return true;

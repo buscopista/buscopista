@@ -7,7 +7,6 @@ use yii\helpers\Security;
 class User extends MongoModel implements \yii\web\IdentityInterface
 {
     const SCENARIO_REGISTER         = 'create_account';
-    const SCENARIO_CONFIRM          = 'confirm_account';
     const SCENARIO_UPDATE           = 'update_account';
     const SCENARIO_CHANGE_PASSWORD  = 'change_password';
     const SCENARIO_FORGOT_PASSWORD  = 'forgot_password';
@@ -16,6 +15,19 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     const ROLE_ADMIN     = 1;
     const ROLE_SPORT     = 2;
     const ROLE_MANAGER   = 3;
+
+    /**
+     * @return array a list of scenarios and the corresponding active attributes.
+     */
+    protected function _scenarios()
+    {
+        return [
+            self::SCENARIO_REGISTER         => ['username', 'password', 'mail', 'role', 'status'],
+            self::SCENARIO_UPDATE           => ['username', 'mail'],
+            self::SCENARIO_CHANGE_PASSWORD  => ['password'],
+            self::SCENARIO_FORGOT_PASSWORD  => ['resetPasswordToken'],
+        ];
+    }
     
     /**
      * @return array list of attribute names.
@@ -24,17 +36,6 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     {
         return ['username', 'password', 'salt', 'mail', 'role', 'authKey', 
             'accessToken', 'confirmToken', 'resetPasswordToken'];
-    }
-    
-    public function scenarios()
-    {
-        return [
-            self::SCENARIO_REGISTER         => ['username', 'password', 'mail', 'role', 'status'],
-            self::SCENARIO_CONFIRM          => ['status'],
-            self::SCENARIO_UPDATE           => ['username', 'mail'],
-            self::SCENARIO_CHANGE_PASSWORD  => ['password'],
-            self::SCENARIO_FORGOT_PASSWORD  => ['resetPasswordToken'],
-        ];
     }
     
     /**
@@ -93,7 +94,7 @@ class User extends MongoModel implements \yii\web\IdentityInterface
                 // Identity security
                 $this->authKey = Security::generateRandomKey();
                 $this->accessToken = Security::generateRandomKey();
-                $this->confirmToken = Security::generateRandomKey();
+                $this->generateConfirmToken();
                 // Node status (inactive by default)
                 $this->status = 0;
             }
@@ -163,6 +164,17 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     {
         return $this->authKey === $authKey;
     }
+
+    /**
+     * Generate password
+     * 
+     * @param string $password
+     */
+    public function generatePassword($password) 
+    {
+        $this->password = Security::generatePasswordHash($password . $this->salt);
+        return $this;
+    }
     
     /**
      * Validates password
@@ -187,13 +199,36 @@ class User extends MongoModel implements \yii\web\IdentityInterface
     }
     
     /**
-     * Generate password
-     * 
-     * @param string $password
+     * Validates reset token and expiration
+     *
+     * @param  string  $token token to validate
+     * @return boolean if token provided is valid
      */
-    public function generatePassword($password) 
+    public function validateResetPasswordToken($token)
     {
-        $this->password = Security::generatePasswordHash($password . $this->salt);
+        $time = (int) array_shift(explode('_', $token));
+        return $time > strtotime('-1 week') && $token === $this->resetPasswordToken;
+    }
+    
+    /**
+     * Generate confirm token
+     * 
+     * @return string confirm token
+     */
+    public function generateConfirmToken()
+    {
+        $this->confirmToken = Security::generateRandomKey();
         return $this;
+    }
+    
+    /**
+     * Validates confirm token
+     *
+     * @param  string  $token token to validate
+     * @return boolean if token provided is valid
+     */
+    public function validateConfirmToken($token)
+    {
+        return $token === $this->confirmToken;
     }
 }

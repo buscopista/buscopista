@@ -65,4 +65,13 @@ class RegisterForm extends Model
             ]))
             ->send();
     }
+    
+    /**
+     * Security reset
+     */
+    public function reset()
+    {
+        $this->password = ''; 
+        $this->repeat_password = ''; 
+    }
 }

@@ -7,6 +7,8 @@ use yii\mongodb\Query;
 
 abstract class MongoModel extends ActiveRecord
 {
+    const SCENARIO_CHANGE_STATUS = '(de)activate';
+    
     public function __construct($config = [])
     {
         parent::__construct($config);
@@ -48,6 +50,22 @@ abstract class MongoModel extends ActiveRecord
         }
         return $attributes;
     }
+    
+    /**
+     * @return array a list of scenarios and the corresponding active attributes.
+     */
+    public function scenarios()
+    {
+        return array_merge(
+            [self::SCENARIO_CHANGE_STATUS => ['status']],
+            $this->_scenarios()
+        );
+    }
+    
+    /**
+     * @return array a list of scenarios and the corresponding active attributes.
+     */
+    abstract protected function _scenarios();
     
     /**
      * @return array list of attribute names.
