@@ -2,6 +2,7 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\widgets\ActiveForm;
+use yii\web\View;
 
 /**
  * @var yii\web\View $this
@@ -10,6 +11,7 @@ use yii\widgets\ActiveForm;
  */
 $this->title = Yii::t('app', 'Settings');
 $this->params['breadcrumbs'][] = $this->title;
+$hint = Yii::t('app', 'If you change your e-mail address, you will need to confirm your account again after automatic logout.');
 ?>
 <div class="account-index">
     
@@ -35,17 +37,53 @@ $this->params['breadcrumbs'][] = $this->title;
 
         <?= $form->field($model, 'username') ?>
         <?= $form->field($model, 'mail')
-                 ->hint(Yii::t('app', 'If you change your e-mail address, you will need to confirm your account again after automatic logout.')) ?>
+                 ->hint($hint) ?>
 
         <div class="form-group">
             <div class="col-lg-offset-1 col-lg-11">
                 <?= Html::submitButton(Yii::t('app', 'Save changes'), [
                     'class' => 'btn btn-primary col-lg-3', 
-                    'name' => 'login-button'
+                    'name'  => 'save-button',
+                    'id'    => 'save',
                 ]) ?>
             </div>
         </div>
         <?php ActiveForm::end(); ?>
     </div>
+    
+    <!-- Small modal -->
+    
+    <div id="confirm" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="mySmallModalLabel"><?= Yii::t('app', 'Remember') ?></h4>
+                </div>
+                <div class="modal-body">
+                    <p><?= $hint ?></p>
+                    <button class="btn btn-primary" id="continue"><?= Yii::t('app', 'Continue') ?></button>
+                    <button class="btn" data-dismiss="modal"><?= Yii::t('app', 'Cancel') ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <?php $this->registerJs(
+        'var confirmed = false;'
+        . '$("#account-form").submit(function(e){'
+            . 'var oldMail = "' . $model->mail . '";'
+            . 'var newMail = this.elements["AccountForm[mail]"].value;'
+            . 'if (oldMail !== newMail && !confirmed) {'
+                . 'var self = this;'
+                . 'e.preventDefault();'
+                . '$("#confirm").modal("show")'
+                . '.one("click", "#continue", function(e){'
+                    . 'confirmed = true;'
+                    . 'self.submit();'
+                . '});'
+            . '}'
+        . '})'
+    , View::POS_END) ?>
     
 </div>

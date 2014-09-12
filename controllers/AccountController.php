@@ -85,7 +85,6 @@ class AccountController extends Controller
                 $obj->sendConfirmationMail($user);
                 // Logout
                 Yii::$app->user->logout();
-                // TODO show a message...
                 return $this->goHome();
             }            
         }
