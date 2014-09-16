@@ -1,0 +1,119 @@
+<?php
+
+namespace app\models;
+
+use yii\mongodb\ActiveRecord;
+use yii\mongodb\Query;
+
+abstract class MongoModel extends ActiveRecord
+{
+    const SCENARIO_CHANGE_STATUS = '(de)activate';
+    
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
+        
+        // Update case
+        if (!empty($config) && !empty($config['_id'])) {
+            $this->setOldAttributes($config);
+        }
+    }
+    
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+            $now = time();
+            if ($insert) {
+                // Create case
+                $this->created = $now;
+                // Node status (published by default)
+                $this->status = 1;
+            }
+            $this->modified = $now;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Returns the attribute values that have been modified since they are loaded or saved most recently.
+     * @param string[]|null $names the names of the attributes whose values may be returned if they are
+     * changed recently. If null, [[attributes()]] will be used.
+     * @return array the changed attribute values (name-value pairs)
+     */
+    public function getDirtyAttributes($names = null)
+    {
+        $attributes = parent::getDirtyAttributes($names);
+        // BUG? Removing PK to avoid update errors...
+        if (isset($attributes['_id'])) {
+            unset($attributes['_id']);
+        }
+        return $attributes;
+    }
+    
+    /**
+     * @return array a list of scenarios and the corresponding active attributes.
+     */
+    public function scenarios()
+    {
+        return array_merge(
+            [self::SCENARIO_CHANGE_STATUS => ['status']],
+            $this->_scenarios()
+        );
+    }
+    
+    /**
+     * @return array a list of scenarios and the corresponding active attributes.
+     */
+    abstract protected function _scenarios();
+    
+    /**
+     * @return array list of attribute names.
+     */
+    public function attributes()
+    {
+        return array_merge(
+            ['_id', 'created', 'modified', 'status'], 
+            $this->_attributes()
+        );
+    }
+    
+    /**
+     * @return array list of attribute names.
+     */
+    abstract protected function _attributes();
+    
+    /**
+     * Activate / publish node
+     */
+    public function activate()
+    {
+        $this->status = 1;
+        return $this;
+    }
+    
+    /**
+     * Deactivate / unpublish node
+     */
+    public function deactivate()
+    {
+        $this->status = 0;
+        return $this;
+    }
+    
+    /**
+     * Auxiliar method to find elements
+     * 
+     * @param array $params
+     * @return \static
+     */
+    protected static function _findOneBy(array $params)
+    {
+        $query = new Query;
+        $data = $query->from(self::collectionName())
+                ->where($params)
+                ->one();
+        
+        return empty($data) ? null : new static($data);
+    }
+}

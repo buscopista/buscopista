@@ -28,6 +28,9 @@ class LoginForm extends Model
             ['rememberMe', 'boolean'],
             // password is validated by validatePassword()
             ['password', 'validatePassword'],
+            // validate user status (active?) 
+            // IMPORTANT: after password validation to avoid accounts discovery
+            [['username'], 'validateStatus'],
         ];
     }
 
@@ -41,11 +44,26 @@ class LoginForm extends Model
             $user = $this->getUser();
 
             if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError('password', 'Incorrect username or password.');
+                $this->addError('username', 'Incorrect username or password.');
             }
         }
     }
 
+    /**
+     * Active user?
+     * @return boolean
+     */
+    public function validateStatus()
+    {
+        if (!$this->hasErrors()) {
+            $user = $this->getUser();
+            
+            if ($user && !$user->status) {
+                $this->addError('username', 'Account not verified. Please check out your e-mail inbox and look for the confirmation e-mail.');
+            }
+        }
+    }
+    
     /**
      * Logs in a user using the provided username and password.
      * @return boolean whether the user is logged in successfully
@@ -58,7 +76,7 @@ class LoginForm extends Model
             return false;
         }
     }
-
+    
     /**
      * Finds user by [[username]]
      *

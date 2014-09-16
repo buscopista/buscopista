@@ -89,3 +89,12 @@ a.desc:after {
 	padding: 10px 20px;
 	margin: 0 0 15px 0;
 }
+
+/* Other styles */
+
+.reverse {
+    -webkit-transform:rotate(-180deg);
+    -moz-transform:rotate(-180deg); 
+    -o-transform:rotate(-180deg); 
+    transform:rotate(-180deg);
+}

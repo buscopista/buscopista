@@ -26,7 +26,7 @@ AppAsset::register($this);
     <div class="wrap">
         <?php
             NavBar::begin([
-                'brandLabel' => 'My Company',
+                'brandLabel' => Yii::$app->params['sitename'],
                 'brandUrl' => Yii::$app->homeUrl,
                 'options' => [
                     'class' => 'navbar-inverse navbar-fixed-top',
@@ -39,9 +39,9 @@ AppAsset::register($this);
                     ['label' => 'About', 'url' => ['/site/about']],
                     ['label' => 'Contact', 'url' => ['/site/contact']],
                     Yii::$app->user->isGuest ?
-                        ['label' => 'Login', 'url' => ['/site/login']] :
+                        ['label' => 'Login', 'url' => ['/account/login']] :
                         ['label' => 'Logout (' . Yii::$app->user->identity->username . ')',
-                            'url' => ['/site/logout'],
+                            'url' => ['/account/logout'],
                             'linkOptions' => ['data-method' => 'post']],
                 ],
             ]);
@@ -51,14 +51,22 @@ AppAsset::register($this);
         <div class="container">
             <?= Breadcrumbs::widget([
                 'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
-            ]) ?>
+            ]) ?>            
+            <?php foreach (array('info' => 'info', 'danger' => 'error', 'warning' => 'warning', 'success' => 'success') as $class => $alert): ?>
+                <?php if (Yii::$app->session->hasFlash($alert)): ?>
+                    <div class="alert alert-<?= $class ?>">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        <?= Yii::$app->session->getFlash($alert) ?>
+                    </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
             <?= $content ?>
         </div>
     </div>
 
     <footer class="footer">
         <div class="container">
-            <p class="pull-left">&copy; My Company <?= date('Y') ?></p>
+            <p class="pull-left"><span class="reverse" style="display: inline-block;">&copy;</span> <?= date('Y') ?> <?= Yii::$app->params['sitename'] ?></p>
             <p class="pull-right"><?= Yii::powered() ?></p>
         </div>
     </footer>
